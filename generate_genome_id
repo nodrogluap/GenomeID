@@ -1,0 +1,13 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use Bio::Seq::GenomeID qw(generate_id);
+
+@ARGV >= 1 or die "Usage: $0 <sample1.bam> [sample2.bam]\n";
+print "GenomeID\n" if @ARGV > 1;
+for my $file (@ARGV){
+  my $genid = generate_id( type=>'bam',file=>$file,sex=>0,hg=>'hg19');
+  print "$genid\n";
+}
