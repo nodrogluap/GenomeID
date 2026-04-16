@@ -17,3 +17,8 @@ nytprof.out
 /pm_to_blib
 *.o
 *.bs
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
