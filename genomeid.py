@@ -249,8 +249,8 @@ BIT_LOC_STATIC: Dict[str, Dict[str, Any]] = {
         "Y:8984817":  "63:13:E-L485", "Y:12524526": "64:12:E-L514",
         "Y:19734375": "65:9:E-M33",   "Y:19617112": "66:12:E-M281",
         "Y:22744939": "67:15:E-M293", "Y:19578564": "68:9:E-M33",
-        "Y:19579817": "69:12:E-M35",  # duplicate key below overrides in Python (last wins)
-        "Y:19579817": "70:10:E-M44",  # Perl: last definition wins
+        "Y:19579817": "69:12:E-M35",  # NOTE: duplicate key – Python (like Perl) keeps last value
+        "Y:19579817": "70:10:E-M44",  # last definition wins in both languages
         "Y:6954907":  "71:14:E-M521", "Y:19728291": "72:8:E-M75",
         "Y:19730686": "73:15:E-M81",  "Y:19617112": "74:7:E-M96",  # duplicate key
         "Y:18921534": "75:8:E-P147",  "Y:12039140": "76:9:E-P177",
@@ -532,7 +532,8 @@ REF_ALLEL_STATIC: Dict[str, Dict[str, str]] = {
         "7:101160859": "A","7:151557089": "G",  "8:93923709": "G", "9:27202872": "C",
         "9:74800368": "G", "9:97428498": "A",   "10:68166340": "C","10:98459557": "T",
         "11:6608435": "G", "11:16111867": "C",  "11:30233638": "G","12:884764": "A",
-        "12:51806958": "T","13:24892817": "G",  "13:9532292": "N", "14:50302999": "A",
+        "12:51806958": "T","13:24892817": "G",  "13:9532292": "N",  # 'N' = ambiguous base in ref genome (as in Perl source)
+        "14:50302999": "A",
         "14:75579515": "C","16:70269677": "A",  "17:7288772": "A", "17:44372421": "T",
         "17:73201609": "T","18:23833905": "T",  "19:10156401": "T","19:32862558": "T",
         "19:54930534": "T","20:6119441": "G",   "20:19990061": "G","20:37236651": "A",
@@ -556,7 +557,8 @@ REF_ALLEL_STATIC: Dict[str, Dict[str, str]] = {
         "7:101160859": "C","7:151557089": "T",  "8:93923709": "T", "9:27202872": "A",
         "9:74800368": "A", "9:97428498": "A",   "10:68166340": "T","10:98459557": "G",
         "11:6608435": "C", "11:16111867": "A",  "11:30233638": "C","12:884764": "C",
-        "12:51806958": "C","13:24892817": "T",  "13:9532292": "N", "14:50302999": "G",
+        "12:51806958": "C","13:24892817": "T",  "13:9532292": "N",  # 'N' = ambiguous base in ref genome (as in Perl source)
+        "14:50302999": "G",
         "14:75579515": "G","16:70269677": "G",  "17:7288772": "C", "17:44372421": "G",
         "17:73201609": "G","18:23833905": "T",  "19:10156401": "T","19:32862558": "G",
         "19:54930534": "T","20:6119441": "A",   "20:19990061": "C","20:37236651": "C",
@@ -1266,8 +1268,12 @@ def _bin2dec(bits: str) -> int:
 
 
 def _check_version(bin_ids: List[str]) -> None:
+    # NOTE: intentionally replicates a Perl bug in GenomeID.pm/pvalue.pl where
+    # check_version() compares bin_ids[0] to itself (both v1 and v2 index into
+    # bin_ids[0]).  This means the version check never fires; preserved for
+    # byte-for-byte compatibility.
     v1 = bin_ids[0][66:72]
-    v2 = bin_ids[0][66:72]   # NOTE: Perl bug - both use bin_ids[0]
+    v2 = bin_ids[0][66:72]  # should be bin_ids[1] – Perl bug intentionally replicated
     if v1 != v2:
         raise RuntimeError("Genome IDs are incompatible versions")
 
@@ -1319,7 +1325,9 @@ def autosome_prob(id1: str, id2: str) -> Tuple[float, int]:
     n = len(bits) - skip
 
     if skip % 2:
-        pass  # FIX THIS (matches Perl TODO)
+        # Matches Perl source: the original pvalue.pl has "#FIX THIS" here with
+        # no implementation.  Left as no-op intentionally for byte-for-byte parity.
+        pass
     elif len(bits) == 58:
         n -= 1
     else:
