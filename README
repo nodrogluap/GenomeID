@@ -32,3 +32,61 @@ it under the same terms as Perl itself, either Perl version 5.10.1 or,
 at your option, any later version of Perl 5 you may have available.
 
 
+Python Implementation
+=====================
+
+A pure-Python port of the Perl module is provided in ``genomeid.py``.
+The Python output IDs match the Perl implementation byte-for-byte for
+the same inputs.
+
+DEPENDENCIES (Python)
+
+    pip install pysam
+
+USAGE
+
+    from genomeid import generate_id
+
+    # From a plain VCF file
+    gid = generate_id(file='sample.vcf', type='vcf', hg='hg38')
+    print(gid)   # e.g. "/gAAAAAAAABB"  (12-char base64 without sex markers)
+
+    # From a bgzip+tabix-indexed VCF (uses pysam.TabixFile internally)
+    gid = generate_id(file='sample.vcf.gz', type='tbi', hg='hg38', sex=True)
+    print(gid)   # 20-char base64 (includes X/Y marker bits)
+
+    # From a BAM file (uses pysam.AlignmentFile + pileup)
+    gid = generate_id(file='sample.bam', type='bam', hg='hg38', sex=True)
+    print(gid)
+
+    # Multi-sample VCF: select sample by name
+    gid = generate_id(file='cohort.vcf', type='vcf', hg='hg38',
+                      sampleName='NA12878')
+
+Keyword arguments
+-----------------
+  file        str   Path to BAM / VCF / bgzip+tabix VCF  (required)
+  type        str   'bam' | 'vcf' | 'tbi'                (required)
+  hg          str   'hg19' | 'hg38'  (auto-detected if omitted)
+  baq         int   Base quality threshold (default 30, BAM only)
+  maq         int   Mapping quality threshold (default 20, BAM only)
+  noise       float Noise threshold (default 0.05, BAM only)
+  sex         bool  Include sex-chromosome marker bits (default False)
+  ucn         int   Unknown/complex notation flag (default 0)
+  ref         int   Fill missing sex markers from reference (default 0)
+  sampleName  str   Sample column name in multi-sample VCF/TBI
+  minDepth    int   Minimum read depth (default 10, BAM only)
+
+Bit layout
+----------
+  MADIB (6 bits)  +  AMB (58 bits)  +  SMB (2 bits)  +
+  GVB (6 bits)  [+  XMB (48 bits, only when sex=True)]
+
+  Total: 72 bits (12 base64 chars) without sex
+         120 bits (20 base64 chars) with sex
+
+RUNNING PYTHON TESTS
+
+    python3 -m pytest tests/test_genomeid.py -v
+
+
